@@ -1,0 +1,26 @@
+# generated output (regenerate with tools/)
+build/
+out*/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# SolidWorks temp / lock files
+~$*
+*.SLDBAK
+*.bak
+
+# Arduino IDE / PlatformIO build folders
+.pio/
+*.hex
+*.elf

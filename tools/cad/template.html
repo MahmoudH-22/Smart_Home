@@ -1,0 +1,234 @@
+<title>MCT331s Smart Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: CAD workspace - 3D viewport + simulation rail on top, drawing sheets / BOM tabs below */
+:root{
+  --bg:#eceff2; --panel:#ffffff; --sunk:#f4f6f8; --ink:#17202b; --muted:#5a6676; --line:#d6dbe2;
+  --accent:#2350d8; --accent-ink:#ffffff; --wood:#b5875a; --ok:#1d8048; --warn:#a86b12; --bad:#c3302f;
+  --lcd:#1e46c8; --lcd-ink:#e9f0ff; --viewbg:#dfe4ea;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --c-sensor:#0f8a7e; --c-actuator:#c4541b; --c-processing:#6a46c9; --c-interface:#2350d8; --c-power:#a86b12; --c-mech:#8a6238;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1317; --panel:#161b21; --sunk:#1b2128; --ink:#e3e8ee; --muted:#95a1b1; --line:#2a323c;
+  --accent:#7d9dff; --accent-ink:#0c1220; --wood:#c99a6a; --ok:#4cc27f; --warn:#e2a948; --bad:#f06a69;
+  --lcd:#1a3aa8; --lcd-ink:#e4ecff; --viewbg:#0b0f13;
+  --c-sensor:#3cc2b3; --c-actuator:#f08a4f; --c-processing:#a68bff; --c-interface:#7d9dff; --c-power:#e2a948; --c-mech:#c99a6a;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1317; --panel:#161b21; --sunk:#1b2128; --ink:#e3e8ee; --muted:#95a1b1; --line:#2a323c;
+  --accent:#7d9dff; --accent-ink:#0c1220; --wood:#c99a6a; --ok:#4cc27f; --warn:#e2a948; --bad:#f06a69;
+  --lcd:#1a3aa8; --lcd-ink:#e4ecff; --viewbg:#0b0f13;
+  --c-sensor:#3cc2b3; --c-actuator:#f08a4f; --c-processing:#a68bff; --c-interface:#7d9dff; --c-power:#e2a948; --c-mech:#c99a6a;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 40px}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;letter-spacing:.01em;text-wrap:balance;margin:0}
+h1{font-size:30px;line-height:1.05}
+h2{font-size:22px}
+h3{font-size:17px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.wrap{max-width:1500px;margin:0 auto;display:grid;gap:14px}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.eyebrow{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
+.seg button{all:unset;cursor:pointer;padding:7px 12px;font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.02em;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg button:focus-visible,.btn:focus-visible,.tab:focus-visible,.key:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px}
+@media (max-width:980px){.stage{grid-template-columns:minmax(0,1fr)}}
+.viewport{position:relative;background:var(--viewbg);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-height:420px;height:min(74vh,760px)}
+@media (max-width:980px){.viewport{height:62vh;min-height:380px}}
+.viewport canvas{display:block;width:100%;height:100%;touch-action:none}
+.toolbar{position:absolute;left:10px;right:10px;top:10px;display:flex;flex-wrap:wrap;gap:8px;pointer-events:none}
+.toolbar>*{pointer-events:auto}
+.tb{display:inline-flex;flex-wrap:wrap;background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);border-radius:8px;overflow:hidden;backdrop-filter:blur(6px)}
+.tb button{all:unset;cursor:pointer;padding:6px 10px;font-size:12.5px;font-family:var(--f-mono);color:var(--ink);border-right:1px solid var(--line)}
+.tb button:last-child{border-right:0}
+.tb button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.tb button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.explode{display:inline-flex;align-items:center;gap:8px;padding:4px 10px;font-family:var(--f-mono);font-size:12px}
+.explode input{width:110px;accent-color:var(--accent)}
+.hud{position:absolute;left:10px;bottom:10px;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none;max-width:calc(100% - 20px)}
+.legend{display:inline-flex;}
+@media (max-width:640px){.hud{display:none}}
+.legend{align-items:center;gap:5px;font-size:11.5px;font-family:var(--f-mono);background:color-mix(in srgb,var(--panel) 88%,transparent);border:1px solid var(--line);border-radius:6px;padding:2px 7px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.viewname{position:absolute;right:12px;bottom:10px;font-family:var(--f-display);font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);pointer-events:none}
+.tip{position:absolute;pointer-events:none;max-width:280px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;line-height:1.4;box-shadow:0 6px 20px rgb(0 0 0 / .18);z-index:5}
+.tip b{font-family:var(--f-display);font-size:15px;font-weight:600}
+.tip .k{color:var(--muted)}
+.lbl3d{position:absolute;transform:translate(-50%,-100%);pointer-events:none;font-family:var(--f-mono);font-size:10.5px;white-space:nowrap;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:4px;padding:1px 5px}
+.rail{display:grid;gap:12px;align-content:start;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-width:0}
+.card h3{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.card h3 small{font-family:var(--f-mono);font-size:11px;color:var(--muted);font-weight:400;letter-spacing:.04em}
+.lcd{background:var(--lcd);color:var(--lcd-ink);font-family:var(--f-mono);font-size:15px;line-height:1.35;border-radius:6px;padding:8px 10px;letter-spacing:.06em;white-space:pre;border:3px solid #2b2f36;box-shadow:inset 0 0 14px rgb(0 0 0 / .35);overflow:hidden}
+.keypad{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.key{all:unset;cursor:pointer;text-align:center;padding:9px 0;border-radius:6px;font-family:var(--f-mono);font-weight:600;background:#1c2330;color:#f1f4f8;border:1px solid #0d1118}
+.key.fn{background:#7f1d1d}
+.key:active{transform:translateY(1px)}
+.coderow{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:12.5px;color:var(--muted)}
+.ctl{display:grid;gap:8px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13.5px}
+.row label{min-width:0}
+.btn{all:unset;cursor:pointer;padding:6px 11px;border-radius:7px;border:1px solid var(--line);background:var(--sunk);font-size:13px;font-weight:500;color:var(--ink);text-align:center}
+.btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger[aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:#fff}
+input[type=range]{accent-color:var(--accent);width:100%}
+.slider{display:grid;gap:2px}
+.slider .row span:last-child{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:var(--f-mono);font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--sunk)}
+.chip.on{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 50%,var(--line));background:color-mix(in srgb,var(--ok) 12%,var(--panel))}
+.chip.alarm{color:#fff;background:var(--bad);border-color:var(--bad);animation:pulse 0.8s steps(2) infinite}
+@keyframes pulse{50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.chip.alarm{animation:none}}
+.log{font-family:var(--f-mono);font-size:11.5px;max-height:150px;overflow:auto;display:grid;gap:3px;color:var(--muted)}
+.log div b{color:var(--ink);font-weight:600}
+.log .al{color:var(--bad)}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--line)}
+.tab{all:unset;cursor:pointer;padding:9px 14px;font-family:var(--f-display);font-weight:600;font-size:17px;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.pane{padding-top:14px}
+.grid-panels{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px}
+.pcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:8px;align-content:start;min-width:0}
+.pcard header{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.pcard .id{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+svg.panel,svg.sheet{width:100%;height:auto;max-height:280px;background:var(--sunk);border-radius:6px}
+svg .cut{fill:color-mix(in srgb,var(--wood) 38%,var(--panel));stroke:#d23a2a;stroke-width:.7}
+svg .hole{fill:var(--sunk);stroke:#d23a2a;stroke-width:.7}
+svg .eng{fill:none;stroke:var(--accent);stroke-width:.6;stroke-dasharray:3 2}
+svg .engt{fill:var(--accent);font-family:var(--f-body)}
+svg .dim{stroke:var(--muted);stroke-width:.6}
+svg .dimt{fill:var(--ink);font-family:var(--f-mono);font-size:9px;text-anchor:middle}
+svg .sheetbg{fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:6 4}
+svg .lbl{fill:var(--ink);font-family:var(--f-mono);font-size:11px;text-anchor:middle}
+.ftab{width:100%;border-collapse:collapse;font-size:12px}
+.ftab td,.ftab th{padding:3px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.ftab th{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:400}
+.ftab td.m{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+details.feat summary{cursor:pointer;font-size:12.5px;color:var(--muted)}
+.tablewrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+table.bom{width:100%;border-collapse:collapse;font-size:13.5px;min-width:820px}
+table.bom th,table.bom td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+table.bom th{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:400;background:var(--sunk);position:sticky;top:0}
+table.bom tr[data-comp]{cursor:pointer}
+table.bom tr[data-comp]:hover td{background:var(--sunk)}
+table.bom td.m{font-family:var(--f-mono);font-size:12px;white-space:nowrap}
+.cls{display:inline-flex;align-items:center;gap:5px;font-family:var(--f-mono);font-size:11.5px;white-space:nowrap}
+.stat{font-family:var(--f-mono);font-size:11px;padding:1px 7px;border-radius:999px;white-space:nowrap}
+.stat.own{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,var(--panel))}
+.stat.buy{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,var(--panel))}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
+.prose{max-width:72ch}
+.prose p{margin:.3em 0 .8em}
+ol.steps{margin:0;padding-left:1.3em;display:grid;gap:8px}
+ol.steps li::marker{font-family:var(--f-mono);color:var(--accent)}
+ul.tight{margin:.2em 0;padding-left:1.1em;display:grid;gap:4px}
+.callout{border:1px solid color-mix(in srgb,var(--warn) 45%,var(--line));background:color-mix(in srgb,var(--warn) 8%,var(--panel));border-radius:10px;padding:10px 14px}
+.stats{display:flex;flex-wrap:wrap;gap:18px;margin:4px 0 12px}
+.stats div{display:grid}
+.stats b{font-family:var(--f-display);font-size:24px;font-weight:600}
+.stats span{font-size:12px;color:var(--muted)}
+.check li{list-style:none;position:relative;padding-left:22px}
+.check li::before{content:"";position:absolute;left:0;top:.35em;width:12px;height:12px;border:1.5px solid var(--accent);border-radius:3px}
+.foot{font-size:12.5px;color:var(--muted)}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">MCT331s · Mechatronic System Integration · Project 1</div>
+      <h1>Smart Home Prototype</h1>
+      <div class="foot mono" id="spec">3 mm MDF laser-cut · 300 × 220 mm footprint · Arduino UNO</div>
+      <div class="foot" id="team">Team: Mahmoud Hisham 2400844 · Ziad Hany 2301401 · Ahmed Hany 2400311 · Moatasem Mohamed 2400732</div>
+    </div>
+    <div class="seg" role="group" aria-label="Roof variant">
+      <button id="varA" aria-pressed="false">A · Gable roof (hinged)</button>
+      <button id="varB" aria-pressed="true">B · Flat lid · chosen</button>
+    </div>
+  </header>
+
+  <section class="stage">
+    <div class="viewport" id="view">
+      <div class="toolbar">
+        <div class="tb" role="group" aria-label="Views">
+          <button data-view="iso" aria-pressed="true">ISO</button>
+          <button data-view="front">FRONT</button>
+          <button data-view="back">BACK</button>
+          <button data-view="left">LEFT</button>
+          <button data-view="right">RIGHT</button>
+          <button data-view="top">TOP</button>
+        </div>
+        <div class="tb" role="group" aria-label="Display">
+          <button id="tDims" aria-pressed="true">Dimensions</button>
+          <button id="tLabels" aria-pressed="false">Labels</button>
+          <button id="tXray" aria-pressed="false">X-ray</button>
+          <button id="tRoof" aria-pressed="false">Open roof</button>
+          <button id="tOrtho" aria-pressed="false">Ortho</button>
+        </div>
+        <div class="tb"><label class="explode" for="explode">Explode <input type="range" id="explode" min="0" max="100" value="0"></label></div>
+      </div>
+      <div class="hud" id="legend"></div>
+      <div class="viewname" id="viewname">Isometric</div>
+      <div class="tip" id="tip" hidden></div>
+    </div>
+
+    <aside class="rail">
+      <div class="card">
+        <h3>LCD 16×2 <small>I2C 0x27</small></h3>
+        <div class="lcd" id="lcdMirror">
+                </div>
+        <div class="keypad" id="keypad" aria-label="4x4 keypad"></div>
+        <div class="coderow"><span>Code <span class="mono" id="codeShow">––––</span></span><span>Default code <b class="mono">1234</b>, then <b class="mono">#</b></span></div>
+      </div>
+      <div class="card ctl">
+        <h3>Security <small>PIR · MC-38 · buzzer</small></h3>
+        <div class="row"><span>Security mode (toggle)</span><button class="btn" id="bArm" aria-pressed="false">Disarmed</button></div>
+        <div class="row"><span>Window (MC-38)</span><button class="btn danger" id="bWin" aria-pressed="false">Closed</button></div>
+        <div class="row"><span>Motion near the door</span><button class="btn" id="bPir">Walk past</button></div>
+        <div class="row"><span>Alarm</span><button class="btn" id="bMute">Mute / reset</button></div>
+      </div>
+      <div class="card ctl">
+        <h3>Lighting &amp; climate <small>LDR · DHT11 · pot</small></h3>
+        <div class="slider"><div class="row"><label for="sAmb">Ambient light (LDR)</label><span id="vAmb">70 %</span></div><input type="range" id="sAmb" min="0" max="100" value="70"></div>
+        <div class="row"><span>Indoor light override</span><button class="btn" id="bLight" aria-pressed="false">Auto</button></div>
+        <div class="slider"><div class="row"><label for="sTemp">Room temperature (DHT11)</label><span id="vTemp">26 °C</span></div><input type="range" id="sTemp" min="15" max="45" step="0.5" value="26"></div>
+        <div class="slider"><div class="row"><label for="sSet">Fan set-point (knob)</label><span id="vSet">30 °C</span></div><input type="range" id="sSet" min="20" max="40" step="0.5" value="30"></div>
+      </div>
+      <div class="card">
+        <h3>System state <small id="clock" class="mono"></small></h3>
+        <div class="chips" id="chips"></div>
+        <h3 style="margin-top:12px">Event log <small>alerts → recipients</small></h3>
+        <div class="log" id="log"></div>
+      </div>
+    </aside>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-tab="panels">Laser panels</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="bom">Components &amp; BOM</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="pins">Pin map</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="build">Assembly</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="prog">Progress 1</button>
+  </nav>
+
+  <section class="pane" id="pane-panels"></section>
+  <section class="pane" id="pane-bom" hidden></section>
+  <section class="pane" id="pane-pins" hidden></section>
+  <section class="pane" id="pane-build" hidden></section>
+  <section class="pane" id="pane-prog" hidden></section>
+</div>
+
+<script type="application/json" id="scene-data">__DATA__</script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+__APP__
+</script>

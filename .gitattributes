@@ -1,0 +1,15 @@
+# normalise line endings for text files
+* text=auto
+
+# binary files (never diff / convert)
+*.pdf    binary
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.SLDPRT binary
+*.SLDASM binary
+*.SLDDRW binary
+
+# keep generated / vendor files out of GitHub's language stats
+docs/design/*.html  linguist-generated
+*.dxf               linguist-generated
